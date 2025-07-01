@@ -175,6 +175,52 @@ def export_logs(format):
             json.dump(data, f, indent=4)
         print("📄 Logs exported to export.json")
 
+from collections import Counter
+
+def show_stats():
+    if not os.path.exists(LOG_FILE):
+        print("⚠️ Log file not found.")
+        return
+
+    with open(LOG_FILE, 'r') as f:
+        reader = csv.reader(f)
+        rows = list(reader)
+
+    if len(rows) <= 1:
+        print("⚠️ No entries to analyze.")
+        return
+
+    header, entries = rows[0], rows[1:]
+
+    timestamps = [row[0] for row in entries]
+    texts = [row[1] for row in entries]
+
+    total_entries = len(entries)
+    first_entry = timestamps[0]
+    last_entry = timestamps[-1]
+
+    # Count entries per date
+    dates = [ts.split()[0] for ts in timestamps]
+    unique_days = set(dates)
+    date_counts = Counter(dates)
+    most_active = date_counts.most_common(1)[0]
+
+    # Common words (skip 1- and 2-letter words)
+    all_words = " ".join(texts).lower().split()
+    filtered_words = [word.strip(",.?!") for word in all_words if len(word) > 2]
+    word_freq = Counter(filtered_words).most_common(5)
+
+    print("\n📊 careLog Stats")
+    print("────────────────────────────")
+    print(f"🧾 Total entries     : {total_entries}")
+    print(f"📅 First entry date  : {first_entry}")
+    print(f"📅 Last entry date   : {last_entry}")
+    print(f"📆 Unique days logged: {len(unique_days)}")
+    print(f"🔥 Most active day   : {most_active[0]} ({most_active[1]} entries)")
+    print("\n🧠 Most common words:")
+    for word, count in word_freq:
+        print(f"   - {word} ({count} times)")
+
 # Main CLI logic
 def main():
     init_log_file()
@@ -205,6 +251,9 @@ def main():
     parser_export = subparsers.add_parser('export', help='Export logs to a file')
     parser_export.add_argument('format', choices=['txt', 'json'], help='Export format (txt or json)')
 
+    # stats
+    parser_stats = subparsers.add_parser('stats', help='Show log statistics')
+
     args = parser.parse_args()
 
     if args.command == 'log':
@@ -219,6 +268,8 @@ def main():
         edit_entry(args.keyword)
     elif args.command == 'export':
         export_logs(args.format)
+    elif args.command == 'stats':
+        show_stats()
     else:
         parser.print_help()
 
