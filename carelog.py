@@ -97,6 +97,56 @@ def delete_by_keyword(keyword):
     except ValueError:
         print("⚠️ Invalid input. Please enter a number.")
 
+def edit_entry(keyword):
+    if not os.path.exists(LOG_FILE):
+        print("⚠️ Log file not found.")
+        return
+
+    with open(LOG_FILE, 'r') as f:
+        rows = list(csv.reader(f))
+
+    if len(rows) <= 1:
+        print("⚠️ No entries found.")
+        return
+
+    header, entries = rows[0], rows[1:]
+    keyword = keyword.lower()
+
+    # Find matching entries
+    matches = [(i, row) for i, row in enumerate(entries) if keyword in row[1].lower()]
+
+    if not matches:
+        print(f"❌ No entries found containing: '{keyword}'")
+        return
+
+    print(f"🔍 Found {len(matches)} matching entries for '{keyword}':\n")
+    for i, (real_index, row) in enumerate(matches, start=1):
+        print(f"{i}. [{row[0]}] {row[1]}")
+
+    try:
+        choice = int(input(f"\n❓ Edit which one? (1-{len(matches)}): "))
+        if 1 <= choice <= len(matches):
+            edit_index = matches[choice - 1][0]
+            old_entry = entries[edit_index]
+
+            new_text = input(f"📝 New text for [{old_entry[0]}] {old_entry[1]}\n> ").strip()
+            if not new_text:
+                print("⚠️ Empty input. Entry not changed.")
+                return
+
+            entries[edit_index] = [old_entry[0], new_text]
+
+            with open(LOG_FILE, 'w', newline='') as f:
+                writer = csv.writer(f)
+                writer.writerow(header)
+                writer.writerows(entries)
+
+            print(f"\n✅ Updated entry: [{old_entry[0]}] {new_text}")
+        else:
+            print("⚠️ Invalid choice. No entry edited.")
+    except ValueError:
+        print("⚠️ Invalid input. Please enter a number.")
+
 # Main CLI logic
 def main():
     init_log_file()
@@ -119,6 +169,9 @@ def main():
     parser_delete = subparsers.add_parser('delete', help='Search and delete a log entry by keyword')
     parser_delete.add_argument('keyword', help='Keyword to filter and choose entry to delete')
 
+    # edit
+    parser_edit = subparsers.add_parser('edit', help='Search and edit a log entry by keyword')
+    parser_edit.add_argument('keyword', help='Keyword to search for the entry to edit')
 
     args = parser.parse_args()
 
@@ -130,6 +183,8 @@ def main():
         filter_logs(args.text)
     elif args.command == 'delete':
         delete_by_keyword(args.keyword)
+    elif args.command == 'edit':
+        edit_entry(args.keyword)
     else:
         parser.print_help()
 
