@@ -147,6 +147,34 @@ def edit_entry(keyword):
     except ValueError:
         print("⚠️ Invalid input. Please enter a number.")
 
+def export_logs(format):
+    if not os.path.exists(LOG_FILE):
+        print("⚠️ Log file not found.")
+        return
+
+    with open(LOG_FILE, 'r') as f:
+        reader = csv.reader(f)
+        rows = list(reader)
+
+    if len(rows) <= 1:
+        print("⚠️ No entries to export.")
+        return
+
+    header, entries = rows[0], rows[1:]
+
+    if format == 'txt':
+        with open('export.txt', 'w') as f:
+            for row in entries:
+                f.write(f"[{row[0]}] {row[1]}\n")
+        print("📄 Logs exported to export.txt")
+
+    elif format == 'json':
+        data = [{"timestamp": row[0], "entry": row[1]} for row in entries]
+        with open('export.json', 'w') as f:
+            import json
+            json.dump(data, f, indent=4)
+        print("📄 Logs exported to export.json")
+
 # Main CLI logic
 def main():
     init_log_file()
@@ -173,6 +201,10 @@ def main():
     parser_edit = subparsers.add_parser('edit', help='Search and edit a log entry by keyword')
     parser_edit.add_argument('keyword', help='Keyword to search for the entry to edit')
 
+    # export
+    parser_export = subparsers.add_parser('export', help='Export logs to a file')
+    parser_export.add_argument('format', choices=['txt', 'json'], help='Export format (txt or json)')
+
     args = parser.parse_args()
 
     if args.command == 'log':
@@ -185,6 +217,8 @@ def main():
         delete_by_keyword(args.keyword)
     elif args.command == 'edit':
         edit_entry(args.keyword)
+    elif args.command == 'export':
+        export_logs(args.format)
     else:
         parser.print_help()
 
