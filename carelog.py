@@ -29,5 +29,16 @@ if args.command == "log":
         print(f"✅ Entry added: [{timestamp}] {args.text}")
     else:
         print("⚠️ Please provide log text in quotes.")
+elif args.command == "view":
+    if os.path.exists(LOG_FILE):
+        with open(LOG_FILE, 'r') as f:
+            reader = csv.reader(f)
+            next(reader)  # skip header
+            print("📖 Health Log:")
+            for row in reader:
+                print(f"[{row[0]}] {row[1]}")
+    else:
+        print("⚠️ No entries found. Try logging something first.")
 else:
-    print("❌ Unknown command. Use: log \"your text here\"")
+    print("❌ Unknown command. Use: log or view")
+
