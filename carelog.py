@@ -39,6 +39,25 @@ elif args.command == "view":
                 print(f"[{row[0]}] {row[1]}")
     else:
         print("⚠️ No entries found. Try logging something first.")
+elif args.command == "filter":
+    if not args.text:
+        print("⚠️ Please provide a keyword to filter.")
+    elif os.path.exists(LOG_FILE):
+        keyword = args.text.lower()
+        with open(LOG_FILE, 'r') as f:
+            reader = csv.reader(f)
+            next(reader)  # skip header
+            print(f"🔎 Filtered entries for: '{keyword}'")
+            found = False
+            for row in reader:
+                if keyword in row[1].lower():
+                    print(f"[{row[0]}] {row[1]}")
+                    found = True
+            if not found:
+                print("❌ No matching entries found.")
+    else:
+        print("⚠️ No entries found. Try logging something first.")
+
 else:
     print("❌ Unknown command. Use: log or view")
 
