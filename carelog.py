@@ -52,6 +52,51 @@ def filter_logs(keyword):
     else:
         print("⚠️ No entries found. Try logging something first.")
 
+def delete_by_keyword(keyword):
+    if not os.path.exists(LOG_FILE):
+        print("⚠️ Log file not found.")
+        return
+
+    with open(LOG_FILE, 'r') as f:
+        rows = list(csv.reader(f))
+
+    if len(rows) <= 1:
+        print("⚠️ No entries found.")
+        return
+
+    header, entries = rows[0], rows[1:]
+    keyword = keyword.lower()
+
+    # Filter entries by keyword
+    matches = [(i, row) for i, row in enumerate(entries) if keyword in row[1].lower()]
+
+    if not matches:
+        print(f"❌ No entries found containing: '{keyword}'")
+        return
+
+    print(f"🔍 Found {len(matches)} matching entries for '{keyword}':\n")
+    for i, (real_index, row) in enumerate(matches, start=1):
+        print(f"{i}. [{row[0]}] {row[1]}")
+
+    try:
+        choice = int(input(f"\n❓ Delete which one? (1-{len(matches)}): "))
+        if 1 <= choice <= len(matches):
+            # Delete the chosen entry from original entries
+            del_index = matches[choice - 1][0]
+            deleted = entries.pop(del_index)
+
+            # Write updated entries
+            with open(LOG_FILE, 'w', newline='') as f:
+                writer = csv.writer(f)
+                writer.writerow(header)
+                writer.writerows(entries)
+
+            print(f"\n🗑️ Deleted entry: [{deleted[0]}] {deleted[1]}")
+        else:
+            print("⚠️ Invalid choice. No entry deleted.")
+    except ValueError:
+        print("⚠️ Invalid input. Please enter a number.")
+
 # Main CLI logic
 def main():
     init_log_file()
@@ -70,6 +115,11 @@ def main():
     parser_filter = subparsers.add_parser('filter', help='Search entries by keyword')
     parser_filter.add_argument('text', help='Keyword to search for')
 
+    # delete (interactive only)
+    parser_delete = subparsers.add_parser('delete', help='Search and delete a log entry by keyword')
+    parser_delete.add_argument('keyword', help='Keyword to filter and choose entry to delete')
+
+
     args = parser.parse_args()
 
     if args.command == 'log':
@@ -78,6 +128,8 @@ def main():
         view_logs()
     elif args.command == 'filter':
         filter_logs(args.text)
+    elif args.command == 'delete':
+        delete_by_keyword(args.keyword)
     else:
         parser.print_help()
 
